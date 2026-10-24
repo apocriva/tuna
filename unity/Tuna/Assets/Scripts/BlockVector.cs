@@ -4,17 +4,17 @@ using UnityEngine;
 public enum WorldDirection
 {
     North,
-    East,
-    South,
     West,
+    South,
+    East,
 }
 
 public enum Direction
 {
     Forward,
-    Right,
-    Back,
     Left,
+    Back,
+    Right,
 }
 
 public static class DirectionUtility
@@ -22,6 +22,18 @@ public static class DirectionUtility
     public static WorldDirection WorldFromHeading(float heading)
     {
         return (WorldDirection)FromAngle(heading);
+    }
+
+    public static float ToHeading(WorldDirection direction)
+    {
+        return direction switch
+        {
+            WorldDirection.North => 0f,
+            WorldDirection.West => 270f,
+            WorldDirection.South => 180f,
+            WorldDirection.East => 90f,
+            _ => throw new ArgumentException()
+        };
     }
 
     public static Direction FromAngle(float angle)

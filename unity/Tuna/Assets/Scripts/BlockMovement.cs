@@ -1,24 +1,29 @@
+using System;
 using UnityEngine;
 
 public class BlockMovement : MonoBehaviour
 {
 
-    [field: SerializeField, Min(0f)]
+    [field: SerializeField, Min(0f), Tooltip("In units of blocks/sec")]
     public float MoveSpeed { get; private set; }
+    [field: SerializeField, Min(0f), Tooltip("In units of 90º/sec")]
+    public float LookSpeed { get; private set; }
 
     public bool IsMoving => CurrentMoveAction != null;
+    public bool IsLooking => CurrentLookAction != null;
     public BlockVector CurrentBlockPos => BlockVector.FromWorld(transform.position);
-    public WorldDirection CurrentFacing => DirectionUtility.WorldFromHeading(transform.rotation.y);
+    public WorldDirection CurrentFacing => DirectionUtility.WorldFromHeading(transform.rotation.eulerAngles.y);
 
     private MoveAction CurrentMoveAction { get; set; } = null;
+    private LookAction CurrentLookAction { get; set; } = null;
 
     private class MoveAction
     {
         public BlockVector Start { get; private set; }
         public BlockVector End { get; private set; }
         public float StartTime { get; private set; }
-        public float Speed { get; set; }
-        public float Progress { get; set; }
+        public float Speed { get; private set; }
+        public float Progress { get; private set; }
 
         public MoveAction(BlockVector start, BlockVector end, float speed)
         {
@@ -49,20 +54,73 @@ public class BlockMovement : MonoBehaviour
         }
     }
 
+    private class LookAction
+    {
+        public float Start { get; private set; }
+        public float End {get; private set; }
+        public float StartTime { get; private set; }
+        public float Speed { get; private set; }
+        public float Progress { get; private set; }
+
+        public LookAction(WorldDirection start, WorldDirection end, float speed)
+        {
+            Start = DirectionUtility.ToHeading(start);
+            End = Start - Mathf.DeltaAngle(Start, DirectionUtility.ToHeading(end));
+            StartTime = Time.time;
+            Speed = speed;
+            Progress = 0f;
+        }
+
+        public void Update(float deltaTime, out bool isComplete)
+        {
+            Progress += deltaTime * Speed;
+            if (Progress >= 1f)
+            {
+                Progress = 1f;
+                isComplete = true;
+            }
+            else
+            {
+                isComplete = false;
+            }
+        }
+
+        public Quaternion CalculateRotation()
+        {
+            return Quaternion.Euler(0f, Start + (End - Start) * Progress, 0f);
+        }
+    }
+
     public void MoveInDirection(Direction direction)
     {
         if (IsMoving) return;
 
-        CurrentMoveAction = new MoveAction(
+        CurrentMoveAction = new(
             CurrentBlockPos,
             CurrentBlockPos + direction.RelativeTo(CurrentFacing).ToBlockVector(),
             MoveSpeed
         );
     }
 
+    public void TurnInDirection(Direction direction)
+    {
+        if (IsLooking) return;
+
+        if (direction != Direction.Left && direction != Direction.Right)
+            throw new ArgumentException();
+
+        Debug.Log($"Turn from {CurrentFacing} to {direction.RelativeTo(CurrentFacing)}");
+        CurrentLookAction = new(
+            CurrentFacing,
+            direction.RelativeTo(CurrentFacing),
+            LookSpeed
+        );
+    }
+
     public void Update()
     {
         UpdateMoveAction();
+        UpdateLookAction();
     }
 
     private void UpdateMoveAction()
@@ -75,6 +133,20 @@ public class BlockMovement : MonoBehaviour
         {
             CurrentMoveAction = null;
         }
+    }
+
+    private void UpdateLookAction()
+    {
+        if (CurrentLookAction == null) return;
+
+        CurrentLookAction.Update(Time.deltaTime, out var isComplete);
+        transform.rotation = CurrentLookAction.CalculateRotation();
+        if (isComplete)
+        {
+            CurrentLookAction = null;
+        }
+
+        Debug.Log($"Facing angle={transform.rotation.eulerAngles.y} direction={CurrentFacing}");
     }
 
 }
