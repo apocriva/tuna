@@ -109,7 +109,6 @@ public class BlockMovement : MonoBehaviour
         if (direction != Direction.Left && direction != Direction.Right)
             throw new ArgumentException();
 
-        Debug.Log($"Turn from {CurrentFacing} to {direction.RelativeTo(CurrentFacing)}");
         CurrentLookAction = new(
             CurrentFacing,
             direction.RelativeTo(CurrentFacing),
@@ -145,8 +144,6 @@ public class BlockMovement : MonoBehaviour
         {
             CurrentLookAction = null;
         }
-
-        Debug.Log($"Facing angle={transform.rotation.eulerAngles.y} direction={CurrentFacing}");
     }
 
 }
