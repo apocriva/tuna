@@ -33,6 +33,13 @@ public class Level : MonoBehaviour
             return PassageType.None;
         }
 
+        var targetTile = Tilemap[target];
+        if (targetTile.id > 0)
+        {
+            // There's a tile there, sorry!
+            return PassageType.None;
+        }
+
         return PassageType.Walkable;
     }
 }
