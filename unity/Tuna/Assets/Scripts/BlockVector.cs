@@ -106,4 +106,9 @@ public static class BlockVectorExtensions
     }
 
     public static int3 ToInt3(this WorldDirection direction) => FromWorldDirection(direction);
+
+    public static bool Any(this bool3 b3)
+    {
+        return b3.x || b3.y || b3.z;
+    }
 }

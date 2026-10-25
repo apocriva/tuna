@@ -2,6 +2,13 @@ using System;
 using Unity.Mathematics;
 using UnityEngine;
 
+[Flags]
+public enum PassageType
+{
+    None = 0,
+    Walkable = 1 << 0,
+}
+
 public class BlockMovement : MonoBehaviour
 {
 
@@ -96,15 +103,17 @@ public class BlockMovement : MonoBehaviour
     {
         if (IsMoving) return;
 
-        var tileData = Level.Current.Tilemap[CurrentBlockPos];
+        // var tileData = Level.Current.Tilemap[CurrentBlockPos];
 
-        Debug.Log($"Tile data: id={tileData.id} flags={tileData.GetFlags()}");
-
-        CurrentMoveAction = new(
-            CurrentBlockPos,
-            CurrentBlockPos + direction.RelativeTo(CurrentFacing).ToInt3(),
-            MoveSpeed
-        );
+        var target = CurrentBlockPos + direction.RelativeTo(CurrentFacing).ToInt3();
+        if (Level.Current.GetPassageBetween(CurrentBlockPos, target) == PassageType.Walkable)
+        {
+            CurrentMoveAction = new(
+                CurrentBlockPos,
+                target,
+                MoveSpeed
+            );
+        }
     }
 
     public void TurnInDirection(Direction direction)
