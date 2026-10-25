@@ -1,4 +1,5 @@
 using System;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class BlockMovement : MonoBehaviour
@@ -11,7 +12,7 @@ public class BlockMovement : MonoBehaviour
 
     public bool IsMoving => CurrentMoveAction != null;
     public bool IsLooking => CurrentLookAction != null;
-    public BlockVector CurrentBlockPos => BlockVector.FromWorld(transform.position);
+    public int3 CurrentBlockPos => BlockVectorExtensions.FromWorld(transform.position);
     public WorldDirection CurrentFacing => DirectionUtility.WorldFromHeading(transform.rotation.eulerAngles.y);
 
     private MoveAction CurrentMoveAction { get; set; } = null;
@@ -19,13 +20,13 @@ public class BlockMovement : MonoBehaviour
 
     private class MoveAction
     {
-        public BlockVector Start { get; private set; }
-        public BlockVector End { get; private set; }
+        public int3 Start { get; private set; }
+        public int3 End { get; private set; }
         public float StartTime { get; private set; }
         public float Speed { get; private set; }
         public float Progress { get; private set; }
 
-        public MoveAction(BlockVector start, BlockVector end, float speed)
+        public MoveAction(int3 start, int3 end, float speed)
         {
             Start = start;
             End = end;
@@ -95,9 +96,13 @@ public class BlockMovement : MonoBehaviour
     {
         if (IsMoving) return;
 
+        var tileData = Level.Current.Tilemap[CurrentBlockPos];
+
+        Debug.Log($"Tile data: id={tileData.id} flags={tileData.GetFlags()}");
+
         CurrentMoveAction = new(
             CurrentBlockPos,
-            CurrentBlockPos + direction.RelativeTo(CurrentFacing).ToBlockVector(),
+            CurrentBlockPos + direction.RelativeTo(CurrentFacing).ToInt3(),
             MoveSpeed
         );
     }

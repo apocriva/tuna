@@ -1,4 +1,5 @@
 using System;
+using Unity.Mathematics;
 using UnityEngine;
 
 public enum WorldDirection
@@ -49,79 +50,48 @@ public static class DirectionUtility
             _ => throw new ArgumentOutOfRangeException(),
         };
     }
-
-    public static WorldDirection RelativeTo(this Direction relative, WorldDirection direction)
-    {
-        return (WorldDirection)(((int)direction + (int)relative) % 4);
-    }
-
-    public static BlockVector ToBlockVector(this WorldDirection direction) => BlockVector.FromWorldDirection(direction);
 }
 
-public struct BlockVector : IEquatable<BlockVector>
+public static class BlockVectorExtensions
 {
     public const float WorldToBlockPosRatio = 1.0f;
 
     // WorldDirections
-    public static readonly BlockVector North = new(0, 1);
-    public static readonly BlockVector East = new(1, 0);
-    public static readonly BlockVector South = new(0, -1);
-    public static readonly BlockVector West = new(-1, 0);
+    public static readonly int3 North = new(0, 0, 1);
+    public static readonly int3 East = new(1, 0, 0);
+    public static readonly int3 South = new(0, 0, -1);
+    public static readonly int3 West = new(-1, 0, 0);
 
     // Directions
-    public static readonly BlockVector Forward = new(0, 1);
-    public static readonly BlockVector Right = Forward.ToDirection(Direction.Right);
-    public static readonly BlockVector Back = Forward.ToDirection(Direction.Back);
-    public static readonly BlockVector Left = Forward.ToDirection(Direction.Left);
+    public static readonly int3 Forward = new(0, 0, 1);
+    public static readonly int3 Right = Forward.ToDirection(Direction.Right);
+    public static readonly int3 Back = Forward.ToDirection(Direction.Back);
+    public static readonly int3 Left = Forward.ToDirection(Direction.Left);
 
-    public int X { get; private set; }
-    public int Y { get; private set; }
-
-    public BlockVector(int x, int y)
+    public static int3 FromWorld(Vector3 world)
     {
-        X = x;
-        Y = y;
+        return new((int)(world.x / WorldToBlockPosRatio), (int)(world.y / WorldToBlockPosRatio), (int)(world.z / WorldToBlockPosRatio));
     }
 
-    public readonly bool Equals(BlockVector other)
+    public static Vector3 ToWorld(this int3 i3)
     {
-        return X == other.X && Y == other.Y;
-    }
-
-    public static BlockVector operator +(BlockVector a, BlockVector b)
-    {
-        return new(a.X + b.X, a.Y + b.Y);
-    }
-
-    public static BlockVector operator -(BlockVector a, BlockVector b)
-    {
-        return new(a.X - b.X, a.Y - b.Y);
-    }
-
-    public readonly Vector3 ToWorld()
-    {
-        return new(X * WorldToBlockPosRatio, 0f, Y * WorldToBlockPosRatio);
+        return new(i3.x * WorldToBlockPosRatio, i3.y * WorldToBlockPosRatio, i3.z * WorldToBlockPosRatio);
     }
 
     /// <summary>
-    /// Returns this <see cref="BlockVector"> rotated to the specified direction,
+    /// Returns this <see cref="int3"> rotated to the specified direction,
     /// where +Y is forward and +X is right.
     /// </summary>
-    public readonly BlockVector ToDirection(Direction direction) => direction switch
+    public static int3 ToDirection(this int3 i3, Direction direction) => direction switch
     {
-        Direction.Forward => new(X, Y),
-        Direction.Right => new(Y, -X),
-        Direction.Back => new(-X, -Y),
-        Direction.Left => new(-Y, X),
+        Direction.Forward => new(i3.x, i3.y, i3.z),
+        Direction.Right => new(i3.z, i3.y, -i3.x),
+        Direction.Back => new(-i3.x, i3.y, -i3.z),
+        Direction.Left => new(-i3.z, i3.y, i3.x),
         _ => throw new ArgumentOutOfRangeException()
     };
 
-    public static BlockVector FromWorld(Vector3 world)
-    {
-        return new((int)(world.x / WorldToBlockPosRatio), (int)(world.z / WorldToBlockPosRatio));
-    }
-
-    public static BlockVector FromWorldDirection(WorldDirection direction) => direction switch
+    public static int3 FromWorldDirection(WorldDirection direction) => direction switch
     {
         WorldDirection.North => North,
         WorldDirection.East => East,
@@ -129,4 +99,11 @@ public struct BlockVector : IEquatable<BlockVector>
         WorldDirection.West => West,
         _ => throw new ArgumentOutOfRangeException()
     };
+
+    public static WorldDirection RelativeTo(this Direction relative, WorldDirection direction)
+    {
+        return (WorldDirection)(((int)direction + (int)relative) % 4);
+    }
+
+    public static int3 ToInt3(this WorldDirection direction) => FromWorldDirection(direction);
 }
